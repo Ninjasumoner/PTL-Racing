@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PTL Fixed Sales Race</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: #2d2d2d;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.04) 1px, transparent 2px),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.03) 1px, transparent 2px),
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 1px, transparent 2px),
+        repeating-linear-gradient(45deg, #2d2d2d 0 2px, #333 2px 3px),
+        repeating-linear-gradient(-45deg, #2d2d2d 0 2px, #333 2px 3px);
+      background-size: 30px 30px, 25px 25px, 40px 40px, 6px 6px, 6px 6px;
+      background-position: 0 0, 10px 10px, 20px 20px, 0 0, 0 0;
+      background-repeat: repeat;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 20px;
+      background: #D70564;
+      margin: 0;
+      color: white;
+      user-select: none;
+      position: relative;
+      z-index: 10;
+    }
+
+    #editBtn {
+      position: absolute;
+      top: 14px;
+      right: 20px;
+      background-color: black;
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
+      transition: background-color 0.3s ease;
+      z-index: 11;
+    }
+    #editBtn:active {
+      background-color: #333;
+    }
+
+    .race-container {
+      margin-top: 0;
+      position: relative;
+      width: 100%;
+      z-index: 5;
+    }
+
+
+    .race-track {
+      width: 99.2vw;
+      margin: 0 auto;
+      padding: 10px 0;
+      display: grid;
+      grid-auto-rows: 70px;
+      gap: 1px;
+      position: relative;
+    }
+
+    .lane {
+      position: relative;
+      height: 70px;
+      width: 100%;
+      border-top: 1px solid rgba(255,255,255,0.15);
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .start-line, .finish-line {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      background: repeating-linear-gradient(to bottom, black 0 20px, white 20px 40px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1;
+    }
+
+    .start-line { left: 80px; }
+    .finish-line { right: 50px; }
+
+    .line-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      color: white;
+      font-family: 'Arial Black', Arial, sans-serif;
+      font-size: 16px;
+      text-align: center;
+      text-shadow: 1px 1px 3px black;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .racer {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 80px;
+      width: 100px;
+      display: flex;
+      align-items: center;
+      user-select: none;
+      z-index: 5;
+    }
+
+    .photo-bubble {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid #2c3e50;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .photo-bubble img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 50%;
+      display: block;
+    }
+
+.car {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin-left: 10px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.car.motorcycle-rotate {
+  width: 80px;    /* Increase width for motorcycles */
+  height: 80px;   /* Increase height for motorcycles */
+}
+
+.car.motorcycle-rotate .progress-number {
+  transform: translate(-50%, -60%); /* Nudge number up slightly */
+  font-size: 16px; /* Optional: slightly smaller text */
+
+}
+
+.car.motorcycle-rotate img {
+  transform: rotate(90deg);
+}
+
+
+    .car img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .progress-number {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+      font-size: 18px;
+      color: white;
+      text-shadow:
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 2px 6px;
+      border-radius: 8px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10;
+      white-space: nowrap;
+    }
+
+    .racer-name {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 20px;
+      font-weight: bold;
+      font-style: italic;
+      color: white;
+      text-shadow:
+        1px 1px 0 #000,
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000;
+      z-index: 2;
+      user-select: none;
+      pointer-events: none;
+      transition: transform 0.3s ease;
+    }
+
+    .racer-name.move-left {
+      transform: translate(-600%, -50%);
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 20;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #modalContent {
+      background: #222;
+      border-radius: 10px;
+      padding: 20px;
+      width: 90vw;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      color: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #modalContent h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      text-align: center;
+      color: #D70564;
+    }
+
+    .racer-edit {
+      background: #333;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .racer-edit label {
+      font-weight: bold;
+      color: white;
+      user-select: none;
+    }
+
+    .racer-edit input {
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: none;
+      font-size: 14px;
+      color: black;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .delete-btn, #addRacerBtn, #closeModalBtn {
+      margin-top: 6px;
+      background: #D70564;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      align-self: center;
+    }
+
+    #closeModalBtn {
+      background: black;
+    }
+
+    .delete-btn:hover, #addRacerBtn:hover {
+      background: #a0034d;
+    }
+
+    #closeModalBtn:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    PTL Fixed Sales Race
+    <button id="editBtn">Edit</button>
+  </h1>
+
+  <div class="race-container" id="raceContainer">
+    <div class="start-line"><div class="line-label">START</div></div>
+    <div class="finish-line"><div class="line-label">FINISH</div></div>
+    <div class="race-track" id="raceTrack"></div>
+  </div>
+
+  <div id="modal">
+    <div id="modalContent">
+      <h2>Edit Racers</h2>
+      <div id="racersEditList"></div>
+      <button id="addRacerBtn">Add New Racer</button>
+      <button id="closeModalBtn">Close</button>
+    </div>
+  </div>
+<script>
+  const carImages = [
+    'https://openclipart.org/image/800px/190176',
+    'https://openclipart.org/image/800px/190179',
+    'https://openclipart.org/image/800px/190178',
+    'https://openclipart.org/image/800px/234440',
+    'https://openclipart.org/image/800px/190173',
+    'https://openclipart.org/image/800px/271561',
+    'https://openclipart.org/image/800px/234444'
+  ];
+
+  const motorcycleImages = [
+    'https://i.ibb.co/LDQRBYgT/motorcycle-0-0-removebg-preview.png',
+    'https://i.ibb.co/MyYw6f32/motorcycle-0-1-removebg-preview.png',
+    'https://i.ibb.co/4whL7zgr/motorcycle-0-2-removebg-preview.png', 
+    'https://i.ibb.co/tp2J9nVG/motorcycle-1-0-removebg-preview.png',
+    'https://i.ibb.co/yFGW03Hk/motorcycle-1-1-removebg-preview.png'
+  ];
+
+  function loadRacers() {
+    const saved = localStorage.getItem('racersData');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        if (Array.isArray(data)) return data;
+      } catch {}
+    }
+    return [
+      { name: 'Alice', image: 'https://via.placeholder.com/40', progress: 0, vehicleType: 'car', car: '' },
+      { name: 'Bob', image: 'https://via.placeholder.com/40', progress: 50, vehicleType: 'car', car: '' },
+      { name: 'Charlie', image: 'https://via.placeholder.com/40', progress: 120, vehicleType: 'car', car: '' },
+      { name: 'David', image: 'https://via.placeholder.com/40', progress: 20, vehicleType: 'car', car: '' },
+      { name: 'Eve', image: 'https://via.placeholder.com/40', progress: 5, vehicleType: 'car', car: '' },
+      { name: 'Frank', image: 'https://via.placeholder.com/40', progress: 75, vehicleType: 'car', car: '' },
+      { name: 'Grace', image: 'https://via.placeholder.com/40', progress: 99, vehicleType: 'car', car: '' }
+    ];
+  }
+
+  // Assign vehicle image based on type, only if racer.car not set or invalid
+  function assignCar(racer) {
+    if (racer.vehicleType === 'motorcycle') {
+      if (!racer.car || !motorcycleImages.includes(racer.car)) {
+        racer.car = motorcycleImages[Math.floor(Math.random() * motorcycleImages.length)];
+      }
+    } else {
+      if (!racer.car || !carImages.includes(racer.car)) {
+        racer.car = carImages[Math.floor(Math.random() * carImages.length)];
+      }
+    }
+  }
+
+  function renderRaceTrack() {
+    const raceTrack = document.getElementById('raceTrack');
+    raceTrack.innerHTML = '';
+    const startX = 80;
+    const finishX = window.innerWidth - 50;
+    const offset = 110;
+
+    racers.forEach(r => {
+      assignCar(r);
+      const lane = document.createElement('div');
+      lane.className = 'lane';
+
+      const nameLabel = document.createElement('div');
+      nameLabel.className = 'racer-name';
+      nameLabel.textContent = r.name;
+
+      const racer = document.createElement('div');
+      racer.className = 'racer';
+
+      const clampedProgress = Math.min(Math.max(r.progress, 0), 96);
+      const displayProgress = Math.min(r.progress, 999);
+      const finalPos = startX - offset + (finishX - startX) * (clampedProgress / 100);
+      const startPos = startX - offset - 150;
+
+      racer.style.transition = 'none';
+      racer.style.left = `${startPos}px`;
+
+      lane.appendChild(nameLabel);
+      lane.appendChild(racer);
+      raceTrack.appendChild(lane);
+
+      void racer.offsetWidth;
+
+      racer.style.transition = 'left 2s ease';
+      racer.style.left = `${finalPos}px`;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'photo-bubble';
+
+      const img = document.createElement('img');
+      img.src = r.image;
+      img.alt = r.name;
+      bubble.appendChild(img);
+
+      const car = document.createElement('div');
+      car.className = 'car';
+      if (r.vehicleType === 'motorcycle') {
+  car.classList.add('motorcycle-rotate');
+}
+
+
+      const carImg = document.createElement('img');
+      carImg.src = r.car;  // Use assigned vehicle image
+      carImg.alt = r.vehicleType === 'motorcycle' ? 'motorcycle' : 'car';
+
+      const prog = document.createElement('div');
+      prog.className = 'progress-number';
+      prog.textContent = displayProgress;
+
+      car.appendChild(carImg);
+      car.appendChild(prog);
+
+      if (r.progress >= 47 && r.progress <= 56) {
+        nameLabel.classList.add('move-left');
+      } else {
+        nameLabel.classList.remove('move-left');
+      }
+
+      racer.appendChild(bubble);
+      racer.appendChild(car);
+    });
+  }
+
+  // --- Edit Modal changes ---
+  function renderEditList() {
+    racersEditList.innerHTML = '';
+    racers.forEach((r, i) => {
+      const div = document.createElement('div');
+      div.className = 'racer-edit';
+
+      div.innerHTML = `
+        <label>Name</label>
+        <input type="text" value="${r.name}" data-index="${i}" data-field="name" />
+        <label>Image URL</label>
+        <input type="text" value="${r.image}" data-index="${i}" data-field="image" />
+        <label>Progress</label>
+        <input type="number" min="0" max="999" value="${r.progress}" data-index="${i}" data-field="progress" />
+        <label>Vehicle Type</label>
+        <select data-index="${i}" data-field="vehicleType">
+          <option value="car" ${r.vehicleType === 'car' ? 'selected' : ''}>Car</option>
+          <option value="motorcycle" ${r.vehicleType === 'motorcycle' ? 'selected' : ''}>Motorcycle</option>
+        </select>
+        <button class="delete-btn" data-index="${i}">Delete</button>
+      `;
+      racersEditList.appendChild(div);
+    });
+
+    // Add listeners for inputs and selects
+    const inputs = racersEditList.querySelectorAll('input, select');
+    inputs.forEach(input => {
+      input.addEventListener('input', e => {
+        const idx = e.target.dataset.index;
+        const field = e.target.dataset.field;
+        if (field === 'progress') {
+          racers[idx][field] = Math.min(999, Math.max(0, Number(e.target.value) || 0));
+        } else if (field === 'vehicleType') {
+          if (racers[idx][field] !== e.target.value) {
+            racers[idx][field] = e.target.value;
+            // Reset car image so a new random one will be assigned for the new vehicle type
+            racers[idx].car = '';
+          }
+        } else {
+          racers[idx][field] = e.target.value;
+        }
+      });
+    });
+
+    const deletes = racersEditList.querySelectorAll('.delete-btn');
+    deletes.forEach(btn => {
+      btn.addEventListener('click', e => {
+        const idx = e.target.dataset.index;
+        racers.splice(idx, 1);
+        renderEditList();
+      });
+    });
+  }
+// Define racers variable globally
+let racers = loadRacers();
+
+const editBtn = document.getElementById('editBtn');
+const modal = document.getElementById('modal');
+const closeModalBtn = document.getElementById('closeModalBtn');
+const addRacerBtn = document.getElementById('addRacerBtn');
+const racersEditList = document.getElementById('racersEditList');
+
+// Initial render
+renderRaceTrack();
+
+// Edit button opens modal
+editBtn.addEventListener('click', () => {
+  renderEditList();
+  modal.style.display = 'flex';
+});
+
+// Close modal button hides modal and saves data + updates race track
+closeModalBtn.addEventListener('click', () => {
+  modal.style.display = 'none';
+  // Save to localStorage
+  localStorage.setItem('racersData', JSON.stringify(racers));
+  renderRaceTrack();
+});
+
+// Add new racer
+addRacerBtn.addEventListener('click', () => {
+  racers.push({
+    name: 'New Racer',
+    image: 'https://via.placeholder.com/40',
+    progress: 0,
+    vehicleType: 'car',
+    car: ''
+  });
+  renderEditList();
+});
+
+</script>
+
+</body>
+</html>
